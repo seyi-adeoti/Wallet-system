@@ -55,8 +55,13 @@ public class WalletService {
     /** Loads the wallet belonging to a user; throws if none exists. */
     @Transactional(readOnly = true)
     public Wallet getWalletByUserId(UUID userId) {
-        return walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found for user"));
+        Wallet wallet = walletRepository.findByUserId(userId)
+        log.info("Wallet found for userId={}", userId);
+        if (wallet == null) {
+            log.error("Wallet not found for userId={}", userId);
+            throw new IllegalArgumentException("Wallet not found for user");
+        }
+        return wallet;
     }
 
     /** Returns the current available and ledger balance for a user's wallet. */
@@ -64,11 +69,23 @@ public class WalletService {
     public WalletBalanceResponse getBalance(UUID userId) {
         Wallet wallet = getWalletByUserId(userId);
         log.debug("Balance for userId={}: balance={}, ledger={}", userId, wallet.getBalance(), wallet.getLedgerBalance());
+
+
+
+        // Try cache first
+    Optional<BigDecimal> cached = walletCacheService.getCachedBalance(wallet.getId());
+    BigDecimal balance = cached.orElseGet(() -> {
+        BigDecimal fresh = wallet.getBalance();
+        walletCacheService.cacheBalance(wallet.getId(), fresh); 
+        return fresh;
+    });
+
         return WalletBalanceResponse.builder()
                 .accountNumber(wallet.getAccountNumber())
                 .currency(wallet.getCurrency())
                 .balance(wallet.getBalance())
                 .ledgerBalance(wallet.getLedgerBalance())
+                 .cached(cached.isPresent())
                 .build();
     }
 
@@ -100,7 +117,10 @@ public class WalletService {
                 .transactionType(transactionType)
                 .build();
 
-        return transactionRepository.save(txn);
+ walletCacheService.invalidateBalance(wallet.getId());
+        WalletTransaction savedTxn = transactionRepository.save(txn);
+        walletCacheService.cacheBalance(wallet.getId(), balanceAfter);
+        return savedTxn;
     }
 
     /**
@@ -136,7 +156,10 @@ public class WalletService {
                 .transactionType(transactionType)
                 .build();
 
-        return transactionRepository.save(txn);
+       walletCacheService.invalidateBalance(wallet.getId());
+        WalletTransaction savedTxn = transactionRepository.save(txn);
+        walletCacheService.cacheBalance(wallet.getId(), balanceAfter);
+        return savedTxn;
     }
 
     /** Returns paginated transaction history for a user's wallet, newest first. */
