@@ -24,6 +24,20 @@ spring:
       host: localhost
       port: 6379
 
+
+      app:
+  jwt:
+    secret: "1234567890tffcuech#$%@%%^33536"
+    expiry-ms: 86400000   
+
+  nip:
+    timeout-seconds: 30
+    max-retry: 3
+
+  rate-limit:
+    transfer-per-minute: 5
+    login-per-minute: 5
+
 springdoc:
   api-docs:
     path: /v3/api-docs

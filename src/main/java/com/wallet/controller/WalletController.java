@@ -27,6 +27,7 @@ public class WalletController {
     private final WalletService walletService;
     private final TransferService transferService;
 
+    /** Returns the authenticated user's wallet balance and account number. */
     @GetMapping("/balance")
     @Operation(summary = "Get wallet balance")
     public ResponseEntity<ApiResponse<WalletBalanceResponse>> getBalance(Principal principal) {
@@ -38,6 +39,7 @@ public class WalletController {
                 .build());
     }
 
+    /** Initiates a wallet-to-wallet transfer; idempotent by reference. */
     @PostMapping("/transfer")
     @Operation(summary = "Transfer funds between wallets")
     public ResponseEntity<ApiResponse<TransferResponse>> transfer(
@@ -51,6 +53,7 @@ public class WalletController {
                 .build());
     }
 
+    /** Returns paginated ledger history with balance snapshots per entry. */
     @GetMapping("/transactions")
     @Operation(summary = "Get wallet transaction history")
     public ResponseEntity<ApiResponse<List<TransactionResponse>>> getTransactions(

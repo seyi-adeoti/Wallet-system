@@ -15,6 +15,7 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     Optional<Wallet> findByAccountNumber(String accountNumber);
     boolean existsByAccountNumber(String accountNumber);
 
+    /** Acquires a pessimistic write lock on the wallet row to prevent concurrent balance races. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT w FROM Wallet w WHERE w.id = :id")
     Optional<Wallet> lockById(@Param("id") UUID id);

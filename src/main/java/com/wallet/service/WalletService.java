@@ -22,6 +22,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Handles wallet lifecycle and ledger entries (credit/debit).
+ * Each money movement writes a {@link WalletTransaction} with balance snapshots.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,8 +34,13 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository transactionRepository;
 
+    /**
+     * Creates a new NGN wallet for the given user with zero balance.
+     * Called automatically during user registration (one wallet per user).
+     */
     @Transactional
     public Wallet createWallet(User user) {
+        log.info("Creating wallet for userId={}", user.getId());
         Wallet wallet = Wallet.builder()
                 .user(user)
                 .accountNumber(generateAccountNumber())
@@ -43,15 +52,18 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
+    /** Loads the wallet belonging to a user; throws if none exists. */
     @Transactional(readOnly = true)
     public Wallet getWalletByUserId(UUID userId) {
         return walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found for user"));
     }
 
+    /** Returns the current available and ledger balance for a user's wallet. */
     @Transactional(readOnly = true)
     public WalletBalanceResponse getBalance(UUID userId) {
         Wallet wallet = getWalletByUserId(userId);
+        log.debug("Balance for userId={}: balance={}, ledger={}", userId, wallet.getBalance(), wallet.getLedgerBalance());
         return WalletBalanceResponse.builder()
                 .accountNumber(wallet.getAccountNumber())
                 .currency(wallet.getCurrency())
@@ -60,9 +72,14 @@ public class WalletService {
                 .build();
     }
 
+    /**
+     * Credits a wallet and persists an audit entry with balanceBefore/balanceAfter snapshots.
+     * Used by {@link TransferService} for the receiver leg of a transfer.
+     */
     @Transactional
     public WalletTransaction creditWallet(Wallet wallet, BigDecimal amount, String reference,
                                           String description, String transactionType) {
+        log.info("Credit walletId={} amount={} ref={}", wallet.getId(), amount, reference);
         BigDecimal balanceBefore = wallet.getBalance();
         BigDecimal balanceAfter = balanceBefore.add(amount);
 
@@ -86,9 +103,14 @@ public class WalletService {
         return transactionRepository.save(txn);
     }
 
+    /**
+     * Debits a wallet (amount + fee) and persists an audit entry with balance snapshots.
+     * Throws if available balance is insufficient.
+     */
     @Transactional
     public WalletTransaction debitWallet(Wallet wallet, BigDecimal amount, BigDecimal fee,
                                          String reference, String description, String transactionType) {
+        log.info("Debit walletId={} amount={} fee={} ref={}", wallet.getId(), amount, fee, reference);
         BigDecimal totalDeduction = amount.add(fee);
         if (wallet.getBalance().compareTo(totalDeduction) < 0) {
             throw new IllegalArgumentException("Insufficient funds");
@@ -117,6 +139,7 @@ public class WalletService {
         return transactionRepository.save(txn);
     }
 
+    /** Returns paginated transaction history for a user's wallet, newest first. */
     @Transactional(readOnly = true)
     public List<TransactionResponse> getTransactionHistory(UUID userId, int page, int size) {
         Wallet wallet = getWalletByUserId(userId);
@@ -137,11 +160,13 @@ public class WalletService {
                 .toList();
     }
 
+    /** Sums successful debit amounts (including fees) for today — used for daily KYC limits. */
     @Transactional(readOnly = true)
     public BigDecimal sumTodayDebits(UUID walletId) {
         return transactionRepository.sumTodayDebits(walletId, LocalDate.now());
     }
 
+    /** Generates a unique 10-digit NGN account number prefixed with "20". */
     private String generateAccountNumber() {
         String number = "20" + (System.currentTimeMillis() % 100000000L);
         while (walletRepository.existsByAccountNumber(number)) {

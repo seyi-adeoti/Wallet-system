@@ -1,0 +1,3 @@
+com/wallet/config/UserIdHeaderAuthFilter.class
+com/wallet/WalletFeatureIntegrationTest.class
+com/wallet/config/TestSecurityConfig.class

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.wallet.WalletFeatureIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 88.46 s -- in com.wallet.WalletFeatureIntegrationTest
