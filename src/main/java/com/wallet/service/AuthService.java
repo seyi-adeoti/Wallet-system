@@ -73,6 +73,7 @@ public class AuthService {
 
         // Rate limit login attempts per IP
         if (!rateLimiterService.isLoginAllowed(clientIp)) {
+            log.info("ClientIp " + clientIp + " has too many login attempts. Try again in 1 minute.");
             throw new WalletException("Too many login attempts. Try again in 1 minute.");
         }
         log.info("Login attempt: {}", request.getEmail());
