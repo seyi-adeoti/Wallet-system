@@ -65,3 +65,28 @@ INSERT INTO kyc_tier_limits (tier, single_transfer_limit, daily_debit_limit, max
     ('TIER_1', 50000.00, 300000.00, 300000.00),
     ('TIER_2', 200000.00, 500000.00, 500000.00),
     ('TIER_3', 1000000.00, 5000000.00, 99999999.00);
+
+
+
+    CREATE TABLE nip_transactions (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_wallet_id    UUID NOT NULL REFERENCES wallets(id),
+    sender_account      VARCHAR(10) NOT NULL,
+    receiver_account    VARCHAR(10) NOT NULL,
+    receiver_bank_code  VARCHAR(6) NOT NULL,
+    receiver_name       VARCHAR(255),
+    amount              DECIMAL(19,4) NOT NULL,
+    fee                 DECIMAL(19,4) DEFAULT 50.00,
+    reference           VARCHAR(100) UNIQUE NOT NULL,
+    session_id          VARCHAR(100) UNIQUE,  -- NIBSS session ID
+    narration           VARCHAR(255),
+    status              VARCHAR(30) DEFAULT 'PENDING',
+    -- PENDING, PROCESSING, SUCCESS, FAILED, TIMEOUT, REVERSED
+    response_code       VARCHAR(10),
+    response_message    VARCHAR(255),
+    retry_count         INT DEFAULT 0,
+    nibss_sent_at       TIMESTAMP,
+    nibss_responded_at  TIMESTAMP,
+    created_at          TIMESTAMP DEFAULT now(),
+    updated_at          TIMESTAMP DEFAULT now()
+);

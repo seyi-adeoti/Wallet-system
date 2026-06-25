@@ -20,8 +20,8 @@ public class WalletCacheService {
 
     private static final String BALANCE_KEY   = "wallet:balance:";
     private static final String ACCOUNT_KEY   = "wallet:account:";
-    private static final Duration BALANCE_TTL = Duration.ofSeconds(30); // short TTL — balance changes often
-    private static final Duration ACCOUNT_TTL = Duration.ofHours(1);    // account number rarely changes
+    private static final Duration BALANCE_TTL = Duration.ofSeconds(30); 
+    private static final Duration ACCOUNT_TTL = Duration.ofHours(1);   
 
     // Cache wallet balance
     public void cacheBalance(UUID walletId, BigDecimal balance) {
