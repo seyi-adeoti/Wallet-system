@@ -32,6 +32,7 @@ public class TransferService {
     private final WalletService walletService;
     private final KycLimitService kycLimitService;
     private final EntityManager entityManager;
+    private final GeneralLedgerService generalLedgerService;
 
     /**
      * Transfers funds from the sender's wallet to a receiver account.
@@ -98,6 +99,14 @@ public class TransferService {
                 .narration(request.getNarration())
                 .status(TransactionStatus.PENDING)
                 .build());
+
+
+                generalLedgerService.postIntraWalletTransfer(
+    request.getAmount(),
+    request.getReference(),
+    senderWallet.getAccountNumber(),
+    receiverWallet.getAccountNumber()
+);
 
         try {
             WalletTransaction debitTxn = walletService.debitWallet(

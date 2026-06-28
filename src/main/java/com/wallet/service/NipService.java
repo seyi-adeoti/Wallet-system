@@ -21,6 +21,7 @@ public class NipService {
     private final WalletRepository walletRepository;
     private final WalletCacheService walletCacheService;
     private final RateLimiterService rateLimiterService;
+    private final GeneralLedgerService generalLedgerService;
 
     private static final BigDecimal NIP_FEE = new BigDecimal("50.00"); // ₦50 per transfer
 
@@ -93,6 +94,13 @@ public class NipService {
             "NIP_TRANSFER"
         );
 
+        generalLedgerService.postNipOutwardTransfer(
+    request.getAmount(),
+    NIP_FEE,
+    request.getReference(),
+    senderWallet.getAccountNumber()
+);
+
         // Update status to PROCESSING
         nipTxn.setStatus(NipStatus.PROCESSING);
         nipTxn.setNibssSentAt(LocalDateTime.now());
@@ -145,6 +153,13 @@ public class NipService {
 
             // Reverse debit
             reverseDebit(senderWallet, request.getAmount(), NIP_FEE, request.getReference());
+
+            generalLedgerService.postNipInwardTransfer(
+    request.getAmount(),
+    NIP_FEE,
+    request.getReference(),
+    senderWallet.getAccountNumber()
+);
 
             log.warn("NIP Transfer FAILED. Ref: {} Code: {} - Reversed",
                 request.getReference(), nibssResponse.getResponseCode());
