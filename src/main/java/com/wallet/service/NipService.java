@@ -22,6 +22,7 @@ public class NipService {
     private final WalletCacheService walletCacheService;
     private final RateLimiterService rateLimiterService;
     private final GeneralLedgerService generalLedgerService;
+    private final AmlService amlService;
 
     private static final BigDecimal NIP_FEE = new BigDecimal("50.00"); // ₦50 per transfer
 
@@ -101,6 +102,13 @@ public class NipService {
     senderWallet.getAccountNumber()
 );
 
+amlService.screenTransaction(
+    senderUserId,
+    senderWallet.getId(),
+    request.getAmount(),
+    request.getReference(),
+    "NIP_TRANSFER"
+);
         // Update status to PROCESSING
         nipTxn.setStatus(NipStatus.PROCESSING);
         nipTxn.setNibssSentAt(LocalDateTime.now());

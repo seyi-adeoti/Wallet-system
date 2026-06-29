@@ -33,6 +33,7 @@ public class TransferService {
     private final KycLimitService kycLimitService;
     private final EntityManager entityManager;
     private final GeneralLedgerService generalLedgerService;
+    private final AmlService amlService;
 
     /**
      * Transfers funds from the sender's wallet to a receiver account.
@@ -106,6 +107,15 @@ public class TransferService {
     request.getReference(),
     senderWallet.getAccountNumber(),
     receiverWallet.getAccountNumber()
+);
+
+
+amlService.screenTransaction(
+    senderUserId,
+    senderWallet.getId(),
+    request.getAmount(),
+    request.getReference(),
+    "WALLET_TRANSFER"
 );
 
         try {
