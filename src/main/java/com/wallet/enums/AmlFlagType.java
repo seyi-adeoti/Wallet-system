@@ -1,0 +1,11 @@
+package com.wallet.enums;
+
+public enum AmlFlagType {
+    HIGH_VALUE_TRANSACTION,
+    HIGH_FREQUENCY_TRANSACTION,
+    SUSPICIOUS_ACTIVITY,
+    FRAUDULENT_ACTIVITY,
+    FRAUDULENT_ACTIVITY,
+    OTHER,
+    NOT_SUSPICIOUS
+}
