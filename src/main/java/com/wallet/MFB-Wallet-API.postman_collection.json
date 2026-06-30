@@ -1,0 +1,745 @@
+{
+    "info": {
+      "name": "MFB Wallet Service",
+      "description": "Complete Postman collection for the MFB Wallet API.\n\n**Setup:**\n1. Run the `01. Register User` request\n2. Run `02. Login` — token auto-saves to `{{token}}` variable\n3. All other requests use `{{token}}` automatically\n\n**Variables used:**\n- `{{base_url}}` — set to `http://localhost:8080`\n- `{{token}}` — auto-set by login script\n- `{{account_number}}` — auto-set by register script",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+      { "key": "base_url",       "value": "http://localhost:8080" },
+      { "key": "token",          "value": "" },
+      { "key": "account_number", "value": "" },
+      { "key": "receiver_account", "value": "" }
+    ],
+    "item": [
+  
+      {
+        "name": "01. Auth",
+        "item": [
+          {
+            "name": "Register User",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accountNumber) {",
+                  "  pm.collectionVariables.set('account_number', res.accountNumber);",
+                  "  console.log('Account number saved:', res.accountNumber);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has account number', () => pm.expect(res.accountNumber).to.exist);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "url": "{{base_url}}/api/v1/auth/register",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"fullName\": \"Chukwuemeka Obi\",\n  \"email\": \"emeka.obi@gmail.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"SecurePass123!\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Register Second User (for transfer testing)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accountNumber) {",
+                  "  pm.collectionVariables.set('receiver_account', res.accountNumber);",
+                  "  console.log('Receiver account saved:', res.accountNumber);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "url": "{{base_url}}/api/v1/auth/register",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"fullName\": \"Amaka Nwosu\",\n  \"email\": \"amaka.nwosu@gmail.com\",\n  \"phone\": \"08087654321\",\n  \"password\": \"SecurePass123!\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Login",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token saved. User:', res.fullName);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has token', () => pm.expect(res.token).to.exist);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "url": "{{base_url}}/api/v1/auth/login",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"emeka.obi@gmail.com\",\n  \"password\": \"SecurePass123!\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Login — Wrong Password (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects wrong password', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "url": "{{base_url}}/api/v1/auth/login",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"emeka.obi@gmail.com\",\n  \"password\": \"WrongPassword\"\n}"
+              }
+            }
+          }
+        ]
+      },
+  
+      {
+        "name": "02. Wallet",
+        "item": [
+          {
+            "name": "Get Balance",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Has balance field', () => pm.expect(res.balance).to.exist);",
+                  "pm.test('Currency is NGN', () => pm.expect(res.currency).to.equal('NGN'));",
+                  "console.log('Current balance: ₦' + res.balance);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": "{{base_url}}/api/v1/wallet/balance"
+            }
+          },
+  
+          {
+            "name": "Fund Wallet (simulate inflow)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/fund",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"amount\": 100000.00,\n  \"reference\": \"FUND-{{$randomUUID}}\",\n  \"description\": \"Test wallet funding\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Intra-wallet Transfer",
+            "event": [{
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique reference for idempotency",
+                  "pm.collectionVariables.set('transfer_ref', 'TRF-' + Date.now());"
+                ]
+              }
+            }, {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Transfer status SUCCESS', () => pm.expect(res.status).to.equal('SUCCESS'));",
+                  "pm.test('Reference matches', () => {",
+                  "  pm.expect(res.reference).to.equal(pm.collectionVariables.get('transfer_ref'));",
+                  "});"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{receiver_account}}\",\n  \"amount\": 5000.00,\n  \"narration\": \"Payment for services\",\n  \"reference\": \"{{transfer_ref}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Intra-wallet Transfer — IDEMPOTENCY TEST (same ref)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 (idempotent — not 4xx)', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Returns same reference', () => {",
+                  "  pm.expect(res.reference).to.equal(pm.collectionVariables.get('transfer_ref'));",
+                  "});",
+                  "console.log('Idempotency verified — same reference returned original result');"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{receiver_account}}\",\n  \"amount\": 5000.00,\n  \"narration\": \"Payment for services\",\n  \"reference\": \"{{transfer_ref}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Transfer — Insufficient Funds (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects insufficient funds', () => pm.response.to.have.status(400));",
+                  "const res = pm.response.json();",
+                  "pm.test('Error message present', () => pm.expect(res.message).to.include('Insufficient'));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{receiver_account}}\",\n  \"amount\": 999999999.00,\n  \"narration\": \"Should fail\",\n  \"reference\": \"TRF-FAIL-{{$randomUUID}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Transfer — KYC Tier Limit Breach (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects tier limit breach', () => pm.response.to.have.status(400));",
+                  "const res = pm.response.json();",
+                  "pm.test('Mentions tier limit', () => pm.expect(res.message).to.include('tier'));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{receiver_account}}\",\n  \"amount\": 60000.00,\n  \"narration\": \"Exceeds Tier 1 single limit of 50k\",\n  \"reference\": \"TRF-TIER-{{$randomUUID}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Get Transaction History",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Has content array', () => pm.expect(res.content).to.be.an('array'));",
+                  "console.log('Total transactions:', res.totalElements);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": {
+                "raw": "{{base_url}}/api/v1/wallet/transactions?page=0&size=20",
+                "query": [
+                  { "key": "page", "value": "0" },
+                  { "key": "size", "value": "20" }
+                ]
+              }
+            }
+          }
+        ]
+      },
+  
+      {
+        "name": "03. NIP Interbank Transfer",
+        "item": [
+          {
+            "name": "Name Enquiry",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Account name returned', () => pm.expect(res.accountName).to.exist);",
+                  "console.log('Account name:', res.accountName);",
+                  "pm.collectionVariables.set('nip_account_name', res.accountName);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": {
+                "raw": "{{base_url}}/api/v1/transfer/name-enquiry?accountNumber=0123456789&bankCode=058",
+                "query": [
+                  { "key": "accountNumber", "value": "0123456789" },
+                  { "key": "bankCode",      "value": "058" }
+                ]
+              }
+            }
+          },
+  
+          {
+            "name": "Name Enquiry — Invalid Account (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns error for bad account', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+                  "});"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": {
+                "raw": "{{base_url}}/api/v1/transfer/name-enquiry?accountNumber=0000000000&bankCode=058",
+                "query": [
+                  { "key": "accountNumber", "value": "0000000000" },
+                  { "key": "bankCode",      "value": "058" }
+                ]
+              }
+            }
+          },
+  
+          {
+            "name": "NIP Transfer",
+            "event": [{
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('nip_ref', 'NIP-' + Date.now());"
+                ]
+              }
+            }, {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('NIP status:', res.status);",
+                  "console.log('Response code:', res.responseCode);",
+                  "pm.test('Has session ID', () => pm.expect(res.sessionId).to.exist);",
+                  "pm.test('Status is valid', () => {",
+                  "  pm.expect(res.status).to.be.oneOf(['SUCCESS', 'FAILED', 'TIMEOUT', 'REVERSED']);",
+                  "});"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/transfer/interbank",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccount\": \"0123456789\",\n  \"bankCode\": \"058\",\n  \"receiverName\": \"{{nip_account_name}}\",\n  \"amount\": 2000.00,\n  \"narration\": \"Payment for invoice INV-001\",\n  \"reference\": \"{{nip_ref}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "NIP Transfer — IDEMPOTENCY TEST (same ref)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Idempotent response', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Same reference returned', () => {",
+                  "  pm.expect(res.reference).to.equal(pm.collectionVariables.get('nip_ref'));",
+                  "});",
+                  "console.log('NIP idempotency verified');"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/transfer/interbank",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccount\": \"0123456789\",\n  \"bankCode\": \"058\",\n  \"receiverName\": \"{{nip_account_name}}\",\n  \"amount\": 2000.00,\n  \"narration\": \"Payment for invoice INV-001\",\n  \"reference\": \"{{nip_ref}}\"\n}"
+              }
+            }
+          }
+        ]
+      },
+  
+      {
+        "name": "04. KYC",
+        "item": [
+          {
+            "name": "Get KYC Status",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Has currentTier', () => pm.expect(res.currentTier).to.exist);",
+                  "console.log('KYC Tier:', res.currentTier);",
+                  "console.log('Single limit: ₦' + res.singleTransferLimit);",
+                  "console.log('Daily limit: ₦' + res.dailyDebitLimit);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": "{{base_url}}/api/v1/kyc/status"
+            }
+          },
+  
+          {
+            "name": "Upgrade KYC to Tier 2 (BVN)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('KYC upgrade status:', res.status);",
+                  "console.log('New tier:', res.requestedTier);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/kyc/upgrade",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"requestedTier\": \"TIER_2\",\n  \"bvn\": \"12345678901\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Upgrade KYC to Tier 3 (NIN + Address)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/kyc/upgrade",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"requestedTier\": \"TIER_3\",\n  \"nin\": \"98765432101\",\n  \"address\": \"12 Ahmadu Bello Way, Victoria Island, Lagos\",\n  \"documentType\": \"NIN_SLIP\",\n  \"documentNumber\": \"98765432101\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Skip Tier Upgrade (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects tier skip', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/kyc/upgrade",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"requestedTier\": \"TIER_3\",\n  \"nin\": \"98765432101\",\n  \"address\": \"12 Ahmadu Bello Way\"\n}"
+              }
+            }
+          }
+        ]
+      },
+  
+      {
+        "name": "05. Admin & Compliance",
+        "item": [
+          {
+            "name": "Get Open AML Flags",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('Open AML flags:', res.totalElements);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": {
+                "raw": "{{base_url}}/api/v1/admin/aml/flags?page=0&size=10",
+                "query": [
+                  { "key": "page", "value": "0" },
+                  { "key": "size", "value": "10" }
+                ]
+              }
+            }
+          },
+  
+          {
+            "name": "Get Settlement Report (today)",
+            "event": [{
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);"
+                ]
+              }
+            }, {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('Report date:', res.reportDate);",
+                  "console.log('Total credits: ₦' + res.totalCredits);",
+                  "console.log('Total debits: ₦' + res.totalDebits);",
+                  "console.log('Net position: ₦' + res.netPosition);",
+                  "console.log('Status:', res.status);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": "{{base_url}}/api/v1/admin/settlement/{{today}}"
+            }
+          },
+  
+          {
+            "name": "GL Trial Balance (today)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('GL is balanced', () => pm.expect(res.balanced).to.be.true);",
+                  "console.log('Total Debits: ₦' + res.totalDebits);",
+                  "console.log('Total Credits: ₦' + res.totalCredits);",
+                  "console.log('Balanced:', res.balanced);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": {
+                "raw": "{{base_url}}/api/v1/admin/gl/trial-balance?date={{today}}",
+                "query": [{ "key": "date", "value": "{{today}}" }]
+              }
+            }
+          },
+  
+          {
+            "name": "GL Account Balance — Customer Wallet Funds (1001)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('GL 1001 Balance: ₦' + res.balance);"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": "{{base_url}}/api/v1/admin/gl/account/1001/balance"
+            }
+          },
+  
+          {
+            "name": "GL Account Balance — Transfer Fee Income (4001)",
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+              "url": "{{base_url}}/api/v1/admin/gl/account/4001/balance"
+            }
+          }
+        ]
+      },
+  
+      {
+        "name": "06. Edge Cases & Security",
+        "item": [
+          {
+            "name": "No Token (expect 401)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects unauthenticated request', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": "{{base_url}}/api/v1/wallet/balance"
+            }
+          },
+  
+          {
+            "name": "Invalid Token (expect 401)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects invalid token', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "GET",
+              "header": [{ "key": "Authorization", "value": "Bearer this.is.not.valid" }],
+              "url": "{{base_url}}/api/v1/wallet/balance"
+            }
+          },
+  
+          {
+            "name": "Transfer to Self (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects self-transfer', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{account_number}}\",\n  \"amount\": 1000.00,\n  \"narration\": \"To myself\",\n  \"reference\": \"SELF-{{$randomUUID}}\"\n}"
+              }
+            }
+          },
+  
+          {
+            "name": "Transfer — Negative Amount (expect 400)",
+            "event": [{
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejects negative amount', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }],
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{token}}" },
+                { "key": "Content-Type",  "value": "application/json" }
+              ],
+              "url": "{{base_url}}/api/v1/wallet/transfer",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"receiverAccountNumber\": \"{{receiver_account}}\",\n  \"amount\": -500.00,\n  \"narration\": \"Negative\",\n  \"reference\": \"NEG-{{$randomUUID}}\"\n}"
+              }
+            }
+          }
+        ]
+      }
+  
+    ]
+  }
+  
+  
