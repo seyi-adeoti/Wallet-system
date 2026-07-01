@@ -1,7 +1,22 @@
 package com.wallet.controller;
 
-
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import com.wallet.service.KycService;
+import com.wallet.dto.response.KycStatusResponse;
+import com.wallet.dto.response.KycUpgradeResponse;
+import com.wallet.dto.request.KycUpgradeRequest;
 
 @RestController
 @RequestMapping("/api/v1/kyc")
@@ -9,6 +24,8 @@ package com.wallet.controller;
 @Tag(name = "04. KYC", description = "KYC tier status and upgrade")
 @SecurityRequirement(name = "Bearer Authentication")
 public class KycController {
+
+    private final KycService kycService;
 
     @Operation(
         summary = "Get KYC status and limits",
